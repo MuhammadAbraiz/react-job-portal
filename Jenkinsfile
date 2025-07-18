@@ -1,9 +1,9 @@
 pipeline {
     agent any
     
-    // Trigger builds on push to the repository
+    // Poll SCM every minute for changes
     triggers {
-        GitHubPushTrigger()
+        pollSCM('* * * * *')
     }
     
     environment {
