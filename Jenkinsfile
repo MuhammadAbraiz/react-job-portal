@@ -135,12 +135,14 @@ pipeline {
                     try {
                         bat """
                             echo 'Building frontend Docker image...'
-                            docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile .
+                            cd frontend
+                            docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f Dockerfile .
                             if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
                             
                             echo 'Tagging frontend image as latest...'
                             docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest
                             if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+                            cd ..
                         """
                     } catch (Exception e) {
                         error "Failed to build frontend Docker image: ${e.message}"
