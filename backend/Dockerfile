@@ -7,13 +7,13 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy package files first to leverage Docker cache
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install all dependencies (including devDependencies)
 RUN npm install
 
 # Copy source code
-COPY . .
+COPY backend/ .
 
 # Production stage
 FROM node:18-alpine
@@ -34,6 +34,25 @@ COPY --from=build /app/package*.json ./
 # Install production dependencies
 RUN npm install --only=production && \
     npm cache clean --force
+
+# Copy application code
+COPY --from=build /app/ .
+
+# Set file permissions
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Expose the app port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:5000/health || exit 1
+
+# Command to run the application
+CMD ["node", "server.js"]
 
 # Copy application code from build stage
 COPY --from=build /app/ .

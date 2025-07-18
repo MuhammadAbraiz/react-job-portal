@@ -106,11 +106,11 @@ pipeline {
                 script {
                     echo "🐳 Building Docker images..."
                     
-                    // Build backend Docker image
+                    // Build backend Docker image with proper context
                     bat "docker build -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile ."
                     bat "docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest"
                     
-                    // Build frontend Docker image
+                    // Build frontend Docker image with proper context
                     bat "docker build -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile ."
                     bat "docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest"
                     
