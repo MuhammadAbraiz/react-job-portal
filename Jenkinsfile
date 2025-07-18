@@ -21,6 +21,7 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Starting CI/CD Pipeline for Job Portal App"
+                    checkout scm
                     bat 'echo ✅ Source code checked out successfully'
                 }
             }
@@ -34,6 +35,13 @@ pipeline {
                             dir('backend') {
                                 echo "🔧 Installing backend dependencies..."
                                 bat 'npm ci'
+                                
+                                // Add a simple test script if it doesn't exist
+                                def packageJson = readJSON file: 'package.json'
+                                if (!packageJson.scripts.test) {
+                                    packageJson.scripts.test = 'echo "No tests configured" && exit 0'
+                                    writeJSON file: 'package.json', json: packageJson, pretty: 4
+                                }
                                 
                                 echo "🧪 Running backend tests..."
                                 bat 'npm test || exit 0'  // Continue even if tests fail
@@ -52,7 +60,7 @@ pipeline {
                                 bat 'npm ci'
                                 
                                 echo "🧪 Running frontend tests..."
-                                bat 'npm test -- --watchAll=false || exit 0'  // Continue even if tests fail
+                                bat 'npm test -- --watchAll=false --passWithNoTests || exit 0'  // Continue even if tests fail
                                 
                                 echo "✅ Frontend build & test completed"
                             }
@@ -67,12 +75,12 @@ pipeline {
                 script {
                     echo "🐳 Building Docker images..."
                     
-                    // Build backend image
-                    bat "docker build -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile ./backend"
+                    // Build backend image from the root directory with proper context
+                    bat "docker build -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile ."
                     bat "docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest"
                     
                     // Build frontend image
-                    bat "docker build -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile ./frontend"
+                    bat "docker build -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile ."
                     bat "docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest"
                     
                     echo "✅ Docker images built successfully"

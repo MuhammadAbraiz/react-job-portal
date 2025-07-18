@@ -7,13 +7,13 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy package files first to leverage Docker cache
-COPY backend/package*.json ./
+COPY package*.json ./
 
 # Install all dependencies (including devDependencies)
 RUN npm ci
 
 # Copy source code
-COPY backend/ .
+COPY . .
 
 # Production stage
 FROM node:18-alpine
