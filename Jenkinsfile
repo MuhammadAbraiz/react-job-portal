@@ -163,7 +163,7 @@ pipeline {
                     // Stop and remove existing containers and orphans
                     bat 'docker-compose down -v --remove-orphans || echo "No containers to stop"'
                     // Force remove any leftover containers that may conflict
-                    bat 'docker rm -f job-portal-mongodb || echo "No old mongodb container"'
+                    bat 'docker rm -f job-portal-mongodb job-portal-backend job-portal-frontend || echo "No old containers"'
                     
                     // Deploy using docker-compose
                     withEnv([
@@ -196,18 +196,6 @@ pipeline {
                 env.BUILD_STATUS = 'SUCCESS'
             }
         }
-        failure {
-            script {
-                env.BUILD_STATUS = 'FAILURE'
-                // Clean up Docker resources on failure
-                echo "Cleaning up Docker resources due to build failure..."
-                bat 'docker-compose down -v 2>nul || echo No containers to remove'
-            }
-        }
-        unstable {
-            script {
-                env.BUILD_STATUS = 'UNSTABLE'
-            }
         }
         always {
             script {
