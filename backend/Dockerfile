@@ -43,11 +43,11 @@ COPY --from=build --chown=nodejs:nodejs /app/ .
 USER nodejs
 
 # Expose the app port
-EXPOSE 5000
+EXPOSE 4000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:4000/api/v1/health || exit 1
 
 # Command to run the application
 CMD ["node", "server.js"]
