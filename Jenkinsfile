@@ -106,13 +106,39 @@ pipeline {
                 script {
                     echo "🐳 Building Docker images..."
                     
-                    // Build backend Docker image with proper context
-                    bat "docker build -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile ."
-                    bat "docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest"
-                    
-                    // Build frontend Docker image with proper context
-                    bat "docker build -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile ."
-                    bat "docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest"
+                    // Build and tag backend Docker image with improved error handling
+                    try {
+                        bat """
+                            echo 'Building backend Docker image...'
+                            docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile .
+                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                            
+                            echo 'Tagging backend image as latest...'
+                            docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest
+                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                        """
+                    } catch (Exception e) {
+                        error "Failed to build backend Docker image: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+
+                    // Build and tag frontend Docker image with improved error handling
+                    try {
+                        bat """
+                            echo 'Building frontend Docker image...'
+                            docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile .
+                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                            
+                            echo 'Tagging frontend image as latest...'
+                            docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest
+                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                        """
+                    } catch (Exception e) {
+                        error "Failed to build frontend Docker image: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
                     
                     echo "✅ Docker images built successfully"
                 }

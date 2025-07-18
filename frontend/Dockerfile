@@ -3,7 +3,7 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first to leverage Docker cache
 COPY frontend/package*.json ./
 
 # Install dependencies
@@ -18,11 +18,21 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
+# Set permissions for nginx user
+RUN chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
+
+# Switch to nginx user for security
+USER nginx
+
 # Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 3000

@@ -18,28 +18,25 @@ COPY backend/ .
 # Production stage
 FROM node:18-alpine
 
-# Create app directory
+# Create app directory and set permissions
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    mkdir -p /app && \
+    chown -R nodejs:nodejs /app
+
 WORKDIR /app
 
 # Install runtime dependencies
 RUN apk add --no-cache curl
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Copy package files
+# Copy package files and install production dependencies
 COPY --from=build /app/package*.json ./
-
-# Install production dependencies
 RUN npm install --only=production && \
-    npm cache clean --force
+    npm cache clean --force && \
+    chown -R nodejs:nodejs /app
 
 # Copy application code
 COPY --from=build /app/ .
-
-# Set file permissions
-RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
