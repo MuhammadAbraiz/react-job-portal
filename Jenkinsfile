@@ -1,6 +1,11 @@
 pipeline {
     agent any
     
+    // Trigger builds on push to the repository
+    triggers {
+        GitHubPushTrigger()
+    }
+    
     environment {
         DOCKER_IMAGE_FRONTEND = "job-portal-frontend"
         DOCKER_IMAGE_BACKEND = "job-portal-backend"
