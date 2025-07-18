@@ -118,12 +118,12 @@ pipeline {
                     try {
                         bat """
                             echo 'Building backend Docker image...'
-                            docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile .
-                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                            docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile ./backend
+                            if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
                             
                             echo 'Tagging backend image as latest...'
                             docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest
-                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                            if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
                         """
                     } catch (Exception e) {
                         error "Failed to build backend Docker image: ${e.message}"
@@ -136,11 +136,11 @@ pipeline {
                         bat """
                             echo 'Building frontend Docker image...'
                             docker build --no-cache --progress=plain -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile .
-                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                            if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
                             
                             echo 'Tagging frontend image as latest...'
                             docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest
-                            if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+                            if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
                         """
                     } catch (Exception e) {
                         error "Failed to build frontend Docker image: ${e.message}"
