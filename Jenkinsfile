@@ -41,13 +41,14 @@ pipeline {
                                     error 'package.json not found in backend directory'
                                 }
                                 
-                                bat """
-                                @echo off
-                                findstr /C:\"\\"test\\"\" package.json >nul
-                                if %ERRORLEVEL% NEQ 0 (
-                                    echo No test script found, adding a simple one...
-                                    echo     "test": "echo No tests configured ^&^& exit 0", >> package.json
-                                )
+                                // Use PowerShell for more reliable JSON handling
+                                powershell """
+                                $packageJson = Get-Content -Path package.json -Raw | ConvertFrom-Json
+                                if (-not $packageJson.scripts.test) {
+                                    Write-Host "No test script found, adding a simple one..."
+                                    $packageJson.scripts | Add-Member -MemberType NoteProperty -Name 'test' -Value 'echo "No tests configured" && exit 0' -Force
+                                    $packageJson | ConvertTo-Json -Depth 10 | Set-Content -Path package.json
+                                }
                                 """
                                 
                                 echo "🧪 Running backend tests..."
@@ -71,13 +72,14 @@ pipeline {
                                     error 'package.json not found in frontend directory'
                                 }
                                 
-                                bat """
-                                @echo off
-                                findstr /C:\"\\"test\\"\" package.json >nul
-                                if %ERRORLEVEL% NEQ 0 (
-                                    echo No test script found, adding a simple one...
-                                    echo     "test": "echo No tests configured ^&^& exit 0", >> package.json
-                                )
+                                // Use PowerShell for more reliable JSON handling
+                                powershell """
+                                $packageJson = Get-Content -Path package.json -Raw | ConvertFrom-Json
+                                if (-not $packageJson.scripts.test) {
+                                    Write-Host "No test script found, adding a simple one..."
+                                    $packageJson.scripts | Add-Member -MemberType NoteProperty -Name 'test' -Value 'echo "No tests configured" && exit 0' -Force
+                                    $packageJson | ConvertTo-Json -Depth 10 | Set-Content -Path package.json
+                                }
                                 """
                                 
                                 echo "🧪 Running frontend tests..."
