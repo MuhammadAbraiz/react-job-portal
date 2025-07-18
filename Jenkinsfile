@@ -196,7 +196,6 @@ pipeline {
                 env.BUILD_STATUS = 'SUCCESS'
             }
         }
-        }
         always {
             script {
                 def duration = currentBuild.durationString.replace(' and counting', '')
