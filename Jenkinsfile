@@ -12,7 +12,10 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         FRONTEND_PORT = "3000"
         BACKEND_PORT = "4000"
-        SLACK_CHANNEL = "#job-portal-ci"
+        SLACK_CHANNEL = "#job-portal-ci-public"
+        
+        // Set build status variable
+        BUILD_STATUS = ""
     }
     
     options {
@@ -184,10 +187,28 @@ pipeline {
     }
     
     post {
+        success {
+            script {
+                env.BUILD_STATUS = 'SUCCESS'
+            }
+        }
+        failure {
+            script {
+                env.BUILD_STATUS = 'FAILURE'
+                // Clean up Docker resources on failure
+                echo "Cleaning up Docker resources due to build failure..."
+                bat 'docker-compose down -v 2>nul || echo No containers to remove'
+            }
+        }
+        unstable {
+            script {
+                env.BUILD_STATUS = 'UNSTABLE'
+            }
+        }
         always {
             script {
                 def duration = currentBuild.durationString.replace(' and counting', '')
-                def currentStatus = currentBuild.currentResult
+                def currentStatus = env.BUILD_STATUS ?: currentBuild.currentResult
                 def color = 'good'
                 def statusEmoji = '✅'
                 def statusText = 'SUCCESS'
@@ -205,17 +226,33 @@ pipeline {
                 echo "${statusEmoji} Pipeline status: ${statusText}"
                 
                 try {
+                    // Get the current Git commit information
+                    def gitCommit = ""
+                    def gitBranch = ""
+                    def changeLog = ""
+                    
+                    try {
+                        gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD 2>/dev/null || echo unknown').trim()
+                        gitBranch = env.GIT_BRANCH ?: sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown').trim()
+                        changeLog = sh(returnStdout: true, script: 'git log -1 --pretty=format:"%s" 2>/dev/null || echo No commit message').trim()
+                    } catch (Exception e) {
+                        echo "Warning: Could not get Git information: ${e.message}"
+                    }
+                    
+                    // Send detailed Slack notification
                     slackSend(
-                        channel: SLACK_CHANNEL,
+                        channel: env.SLACK_CHANNEL,
                         color: color,
                         message: "${statusEmoji} *${statusText}*: Job Portal App\n" +
-                                 "• *Build*: #${BUILD_NUMBER}\n" +
+                                 "• *Build*: #${env.BUILD_NUMBER}\n" +
+                                 (gitBranch ? "• *Branch*: ${gitBranch}\n" : "") +
+                                 (gitCommit ? "• *Commit*: ${gitCommit}\n" : "") +
+                                 (changeLog ? "• *Last Change*: ${changeLog}\n" : "") +
                                  "• *Status*: ${currentStatus}\n" +
                                  "• *Duration*: ${duration}\n" +
                                  (currentStatus == 'FAILURE' ? "• *Failed Stage*: ${currentBuild.currentStages.last()?.name ?: 'Unknown'}\n" : "") +
-                                 (env.CHANGE_TITLE ? "• *Changes*: ${env.CHANGE_TITLE}\n" : "") +
-                                 "• *Console*: ${BUILD_URL}console\n" +
-                                 "• *Build URL*: ${BUILD_URL}",
+                                 "• *Console*: ${env.BUILD_URL}console\n" +
+                                 "• *Build URL*: ${env.BUILD_URL}",
                         failOnError: true
                     )
                     echo "Slack notification sent successfully"
@@ -223,18 +260,12 @@ pipeline {
                     echo "Failed to send Slack notification: ${e.message}"
                     // Try a simpler notification as fallback
                     try {
-                        slackSend channel: SLACK_CHANNEL, 
+                        slackSend channel: env.SLACK_CHANNEL, 
                                 color: 'danger', 
-                                message: "❌ Failed to send detailed notification for build #${BUILD_NUMBER}. Status: ${currentStatus}. See: ${BUILD_URL}"
+                                message: "❌ Failed to send detailed notification for build #${env.BUILD_NUMBER}. Status: ${currentStatus}. See: ${env.BUILD_URL}"
                     } catch (Exception e2) {
                         echo "Critical: Failed to send fallback Slack notification: ${e2.message}"
                     }
-                }
-                
-                // Clean up Docker resources if the build failed
-                if (currentStatus == 'FAILURE' || currentStatus == 'UNSTABLE') {
-                    echo "Cleaning up Docker resources..."
-                    bat 'docker-compose down -v 2>nul || echo No containers to remove'
                 }
             }
         }
