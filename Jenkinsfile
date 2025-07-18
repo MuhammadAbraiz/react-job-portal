@@ -41,9 +41,14 @@ pipeline {
                                     error 'package.json not found in backend directory'
                                 }
                                 
-                                // Create a simple test script if it doesn't exist
-                                bat 'type package.json | findstr /C:"\"test\"" >nul || echo No test script found, adding a simple one...'
-                                bat 'type package.json | findstr /C:"\"test\"" >nul || echo.>> package.json & echo     \"test\": \"echo \\\"No tests configured\\\" \&\& exit 0\", >> package.json'
+                                bat """
+                                @echo off
+                                findstr /C:\"\\"test\\"\" package.json >nul
+                                if %ERRORLEVEL% NEQ 0 (
+                                    echo No test script found, adding a simple one...
+                                    echo     "test": "echo No tests configured ^&^& exit 0", >> package.json
+                                )
+                                """
                                 
                                 echo "🧪 Running backend tests..."
                                 bat 'npm test || exit 0'  // Continue even if tests fail
@@ -66,8 +71,14 @@ pipeline {
                                     error 'package.json not found in frontend directory'
                                 }
                                 
-                                bat 'type package.json | findstr /C:"\"test\"" >nul || echo No test script found, adding a simple one...'
-                                bat 'type package.json | findstr /C:"\"test\"" >nul || echo.>> package.json & echo     \"test\": \"echo \\\"No tests configured\\\" \&\& exit 0\", >> package.json'
+                                bat """
+                                @echo off
+                                findstr /C:\"\\"test\\"\" package.json >nul
+                                if %ERRORLEVEL% NEQ 0 (
+                                    echo No test script found, adding a simple one...
+                                    echo     "test": "echo No tests configured ^&^& exit 0", >> package.json
+                                )
+                                """
                                 
                                 echo "🧪 Running frontend tests..."
                                 bat 'npm test -- --watchAll=false --passWithNoTests || exit 0'  // Continue even if tests fail
