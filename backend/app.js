@@ -33,6 +33,11 @@ app.use(
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/job", jobRouter);
 app.use("/api/v1/application", applicationRouter);
+
+// Health check route for Docker Compose
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 dbConnection();
 
 app.use(errorMiddleware);
