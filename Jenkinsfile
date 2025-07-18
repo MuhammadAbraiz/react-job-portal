@@ -41,15 +41,19 @@ pipeline {
                                     error 'package.json not found in backend directory'
                                 }
                                 
-                                // Use PowerShell for more reliable JSON handling
-                                powershell """
-                                $packageJson = Get-Content -Path package.json -Raw | ConvertFrom-Json
-                                if (-not $packageJson.scripts.test) {
-                                    Write-Host "No test script found, adding a simple one..."
-                                    $packageJson.scripts | Add-Member -MemberType NoteProperty -Name 'test' -Value 'echo "No tests configured" && exit 0' -Force
-                                    $packageJson | ConvertTo-Json -Depth 10 | Set-Content -Path package.json
-                                }
-                                """
+                                // Check if test script exists and add if it doesn't
+                                bat '''
+                                @echo off
+                                findstr /C:\"\\"test\\"\" package.json >nul
+                                if %ERRORLEVEL% NEQ 0 (
+                                    echo No test script found, adding a simple one...
+                                    echo Adding test script to package.json...
+                                    echo     "test": "echo \"No tests configured\" ^&^& exit 0", >> package.json.tmp
+                                    type package.json | findstr /v "^}" > package.json.tmp
+                                    echo   } >> package.json.tmp
+                                    move /Y package.json.tmp package.json
+                                )
+                                '''
                                 
                                 echo "🧪 Running backend tests..."
                                 bat 'npm test || exit 0'  // Continue even if tests fail
@@ -72,15 +76,19 @@ pipeline {
                                     error 'package.json not found in frontend directory'
                                 }
                                 
-                                // Use PowerShell for more reliable JSON handling
-                                powershell """
-                                $packageJson = Get-Content -Path package.json -Raw | ConvertFrom-Json
-                                if (-not $packageJson.scripts.test) {
-                                    Write-Host "No test script found, adding a simple one..."
-                                    $packageJson.scripts | Add-Member -MemberType NoteProperty -Name 'test' -Value 'echo "No tests configured" && exit 0' -Force
-                                    $packageJson | ConvertTo-Json -Depth 10 | Set-Content -Path package.json
-                                }
-                                """
+                                // Check if test script exists and add if it doesn't
+                                bat '''
+                                @echo off
+                                findstr /C:\"\\"test\\"\" package.json >nul
+                                if %ERRORLEVEL% NEQ 0 (
+                                    echo No test script found, adding a simple one...
+                                    echo Adding test script to package.json...
+                                    echo     "test": "echo \"No tests configured\" ^&^& exit 0", >> package.json.tmp
+                                    type package.json | findstr /v "^}" > package.json.tmp
+                                    echo   } >> package.json.tmp
+                                    move /Y package.json.tmp package.json
+                                )
+                                '''
                                 
                                 echo "🧪 Running frontend tests..."
                                 bat 'npm test -- --watchAll=false --passWithNoTests || exit 0'  // Continue even if tests fail
