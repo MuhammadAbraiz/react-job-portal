@@ -178,7 +178,8 @@ pipeline {
                     
                     // Wait for services to be ready
                     echo "⏳ Waiting for services to start..."
-                    bat 'timeout /t 30 /nobreak >nul'
+                    // Simple sleep to allow containers to stabilize (30 seconds)
+                    bat 'ping -n 31 127.0.0.1 >nul'
                     
                     // Health check
                     bat "curl -f http://localhost:${BACKEND_PORT}/api/v1/health || echo Backend health check failed"
@@ -241,7 +242,7 @@ pipeline {
                                  (changeLog ? "• *Last Change*: ${changeLog}\n" : "") +
                                  "• *Status*: ${currentStatus}\n" +
                                  "• *Duration*: ${duration}\n" +
-                                 (currentStatus == 'FAILURE' ? "• *Failed Stage*: ${currentBuild.currentStages.last()?.name ?: 'Unknown'}\n" : "") +
+                                 
                                  "• *Console*: ${env.BUILD_URL}console\n" +
                                  "• *Build URL*: ${env.BUILD_URL}",
                         failOnError: true
