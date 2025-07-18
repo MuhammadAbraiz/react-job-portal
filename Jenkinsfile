@@ -160,8 +160,10 @@ pipeline {
                 script {
                     echo "🚀 Deploying application..."
                     
-                    // Stop and remove existing containers
-                    bat 'docker-compose down || echo "No containers to stop"'
+                    // Stop and remove existing containers and orphans
+                    bat 'docker-compose down -v --remove-orphans || echo "No containers to stop"'
+                    // Force remove any leftover containers that may conflict
+                    bat 'docker rm -f job-portal-mongodb || echo "No old mongodb container"'
                     
                     // Deploy using docker-compose
                     withEnv([
