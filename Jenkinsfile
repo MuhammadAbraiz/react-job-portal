@@ -223,9 +223,9 @@ pipeline {
                     def changeLog = ""
                     
                     try {
-                        gitCommit = sh(returnStdout: true, script: 'git rev-parse --short HEAD 2>/dev/null || echo unknown').trim()
-                        gitBranch = env.GIT_BRANCH ?: sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown').trim()
-                        changeLog = sh(returnStdout: true, script: 'git log -1 --pretty=format:"%s" 2>/dev/null || echo No commit message').trim()
+                        gitCommit = bat(returnStdout: true, script: 'git rev-parse --short HEAD 2>nul || echo unknown').trim()
+                        gitBranch = env.GIT_BRANCH ?: bat(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD 2>nul || echo unknown').trim()
+                        changeLog = bat(returnStdout: true, script: 'git log -1 --pretty=format:"%s" 2>nul || echo No commit message').trim()
                     } catch (Exception e) {
                         echo "Warning: Could not get Git information: ${e.message}"
                     }
