@@ -184,18 +184,58 @@ pipeline {
     }
     
     post {
-        success {
+        always {
             script {
-                echo "🎉 Pipeline completed successfully!"
-                // Uncomment and configure Slack notification if needed
-                // slackSend channel: SLACK_CHANNEL, color: 'good', message: "✅ *SUCCESS*: Job Portal App build #${BUILD_NUMBER} deployed successfully!"
-            }
-        }
-        failure {
-            script {
-                echo "❌ Pipeline failed!"
-                // Uncomment and configure Slack notification if needed
-                // slackSend channel: SLACK_CHANNEL, color: 'danger', message: "❌ *FAILED*: Job Portal App build #${BUILD_NUMBER} failed! ${BUILD_URL}console"
+                def duration = currentBuild.durationString.replace(' and counting', '')
+                def currentStatus = currentBuild.currentResult
+                def color = 'good'
+                def statusEmoji = '✅'
+                def statusText = 'SUCCESS'
+                
+                if (currentStatus == 'FAILURE') {
+                    color = 'danger'
+                    statusEmoji = '❌'
+                    statusText = 'FAILED'
+                } else if (currentStatus == 'UNSTABLE') {
+                    color = 'warning'
+                    statusEmoji = '⚠️'
+                    statusText = 'UNSTABLE'
+                }
+                
+                echo "${statusEmoji} Pipeline status: ${statusText}"
+                
+                try {
+                    slackSend(
+                        channel: SLACK_CHANNEL,
+                        color: color,
+                        message: "${statusEmoji} *${statusText}*: Job Portal App\n" +
+                                 "• *Build*: #${BUILD_NUMBER}\n" +
+                                 "• *Status*: ${currentStatus}\n" +
+                                 "• *Duration*: ${duration}\n" +
+                                 (currentStatus == 'FAILURE' ? "• *Failed Stage*: ${currentBuild.currentStages.last()?.name ?: 'Unknown'}\n" : "") +
+                                 (env.CHANGE_TITLE ? "• *Changes*: ${env.CHANGE_TITLE}\n" : "") +
+                                 "• *Console*: ${BUILD_URL}console\n" +
+                                 "• *Build URL*: ${BUILD_URL}",
+                        failOnError: true
+                    )
+                    echo "Slack notification sent successfully"
+                } catch (Exception e) {
+                    echo "Failed to send Slack notification: ${e.message}"
+                    // Try a simpler notification as fallback
+                    try {
+                        slackSend channel: SLACK_CHANNEL, 
+                                color: 'danger', 
+                                message: "❌ Failed to send detailed notification for build #${BUILD_NUMBER}. Status: ${currentStatus}. See: ${BUILD_URL}"
+                    } catch (Exception e2) {
+                        echo "Critical: Failed to send fallback Slack notification: ${e2.message}"
+                    }
+                }
+                
+                // Clean up Docker resources if the build failed
+                if (currentStatus == 'FAILURE' || currentStatus == 'UNSTABLE') {
+                    echo "Cleaning up Docker resources..."
+                    bat 'docker-compose down -v 2>nul || echo No containers to remove'
+                }
             }
         }
     }
