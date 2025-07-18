@@ -107,16 +107,12 @@ pipeline {
                     echo "🐳 Building Docker images..."
                     
                     // Build backend Docker image
-                    dir('backend') {
-                        bat "docker build -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ."
-                        bat "docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest"
-                    }
+                    bat "docker build -t ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} -f backend/Dockerfile ."
+                    bat "docker tag ${DOCKER_IMAGE_BACKEND}:${DOCKER_TAG} ${DOCKER_IMAGE_BACKEND}:latest"
                     
                     // Build frontend Docker image
-                    dir('frontend') {
-                        bat "docker build -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ."
-                        bat "docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest"
-                    }
+                    bat "docker build -t ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} -f frontend/Dockerfile ."
+                    bat "docker tag ${DOCKER_IMAGE_FRONTEND}:${DOCKER_TAG} ${DOCKER_IMAGE_FRONTEND}:latest"
                     
                     echo "✅ Docker images built successfully"
                 }
